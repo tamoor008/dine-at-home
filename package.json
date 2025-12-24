@@ -46,6 +46,7 @@
           "@radix-ui/react-tooltip": "^1.1.8",
           "@types/bcryptjs": "^2.4.6",
           "@types/jsonwebtoken": "^9.0.10",
+          "@types/three": "^0.181.0",
           "bcryptjs": "^3.0.2",
           "class-variance-authority": "^0.7.1",
           "clsx": "*",
@@ -64,11 +65,14 @@
           "react": "^18.3.1",
           "react-day-picker": "^8.10.1",
           "react-dom": "^18.3.1",
+          "react-globe.gl": "^2.37.0",
           "react-hook-form": "^7.55.0",
           "react-resizable-panels": "^2.1.7",
           "recharts": "^2.15.2",
           "sonner": "^2.0.3",
           "tailwind-merge": "*",
+          "three": "^0.181.0",
+          "vanta": "^0.5.24",
           "vaul": "^1.1.2"
      },
      "devDependencies": {

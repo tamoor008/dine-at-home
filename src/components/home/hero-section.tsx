@@ -1,8 +1,9 @@
 'use client'
 
-import Image from 'next/image'
 import { useSession } from 'next-auth/react'
+import Image from 'next/image'
 import { SearchWidget } from '@/components/search/search-widget'
+import { VantaGlobe } from './vanta-globe'
 
 export function HeroSection() {
   const { data: session } = useSession()
@@ -11,20 +12,27 @@ export function HeroSection() {
   return (
     <section className="relative h-[70vh] lg:h-[80vh] flex items-center justify-center overflow-hidden">
       {/* Background Image */}
-      <div className="absolute inset-0 z-0">
-        <Image
-          src="https://plus.unsplash.com/premium_photo-1677666509899-7c8cbc69ddc5?q=80&w=2342&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-          alt="Elegant dinner table"
-          fill
-          sizes="100vw"
-          className="object-cover"
-          priority
-        />
-        <div className="absolute inset-0 bg-black/40" />
-      </div>
+      {!isHost && (
+        <div className="absolute inset-0 z-0">
+          <Image
+            src="https://plus.unsplash.com/premium_photo-1677666509899-7c8cbc69ddc5?q=80&w=2342&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+            alt="Elegant dinner table"
+            fill
+            sizes="100vw"
+            className="object-cover"
+            priority
+          />
+        </div>
+      )}
+
+      {/* Dark gradient overlay for better text contrast and depth - behind animation */}
+      <div className="absolute inset-0 z-[1] bg-gradient-to-b from-black/75 via-black/65 to-black/75" />
+
+      {/* Vanta Globe Background - on top of overlay */}
+      {!isHost && <VantaGlobe />}
 
       {/* Hero Content */}
-      <div className="relative z-20 text-center text-white max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative z-30 text-center text-white max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {isHost ? (
           <>
             <h1 className="text-4xl lg:text-6xl font-bold leading-tight mb-8">
