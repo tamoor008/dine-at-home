@@ -1,129 +1,158 @@
-'use client'
+"use client";
 
-import { useState, useMemo, useEffect } from 'react'
-import Image from 'next/image'
-import { DinnerCard } from '../dinner/dinner-card'
-import { SearchWidget } from './search-widget'
-import { Button } from '../ui/button'
-import { Badge } from '../ui/badge'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
-import { Checkbox } from '../ui/checkbox'
-import { Slider } from '../ui/slider'
-import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet'
-import { 
-  Filter, 
-  MapPin, 
-  Star, 
+import { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { DinnerCard } from "../dinner/dinner-card";
+import { SearchWidget } from "./search-widget";
+import { Button } from "../ui/button";
+import { Badge } from "../ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
+import { Checkbox } from "../ui/checkbox";
+import { Slider } from "../ui/slider";
+import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
+import {
+  Filter,
+  MapPin,
+  Star,
   SlidersHorizontal,
   Grid3X3,
   List,
   ArrowUpDown,
-  Search
-} from 'lucide-react'
-import { mockData } from '@/lib/mock-data'
+  Search,
+} from "lucide-react";
 
-import { SearchParams, NavigationParams } from '@/types'
+import { SearchParams, NavigationParams, Dinner } from "@/types";
 
 interface SearchResultsProps {
-  searchParams: SearchParams
+  searchParams: SearchParams;
+  initialDinners: Dinner[];
 }
 
-export function SearchResults({ searchParams }: SearchResultsProps) {
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-  const [sortBy, setSortBy] = useState('recommended')
-  const [priceRange, setPriceRange] = useState([0, 200])
-  const [selectedCuisines, setSelectedCuisines] = useState<string[]>([])
-  const [instantBookOnly, setInstantBookOnly] = useState(false)
-  const [superhostOnly, setSuperhostOnly] = useState(false)
-  const [showFilters, setShowFilters] = useState(false)
-  
-  // Mobile detection
-  const [isMobile, setIsMobile] = useState(false)
+export function SearchResults({
+  searchParams,
+  initialDinners,
+}: SearchResultsProps) {
+  const router = useRouter();
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [sortBy, setSortBy] = useState("recommended");
+  const [priceRange, setPriceRange] = useState([0, 200]);
+  const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
+  const [instantBookOnly, setInstantBookOnly] = useState(false);
+  const [superhostOnly, setSuperhostOnly] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
-  const { dinners } = mockData
-  
-  // Get unique cuisines for filter
-  const cuisines = Array.from(new Set(dinners.map(dinner => dinner.cuisine)))
+  // Mobile detection
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Use props instead of mockData
+  const dinners = initialDinners;
+
+  // Get unique cuisines for filter (from current result set - simplistic approach)
+  const cuisines = Array.from(new Set(dinners.map((dinner) => dinner.cuisine)));
 
   // Mobile detection
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768) // md breakpoint
-    }
-    
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
+      setIsMobile(window.innerWidth < 768); // md breakpoint
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // Filter and sort dinners
   const filteredDinners = useMemo(() => {
-    let filtered = dinners.filter(dinner => {
+    let filtered = dinners.filter((dinner) => {
       // Price filter
-      if (dinner.price < priceRange[0] || dinner.price > priceRange[1]) return false
-      
+      if (dinner.price < priceRange[0] || dinner.price > priceRange[1])
+        return false;
+
       // Cuisine filter
-      if (selectedCuisines.length > 0 && !selectedCuisines.includes(dinner.cuisine)) return false
-      
+      if (
+        selectedCuisines.length > 0 &&
+        !selectedCuisines.includes(dinner.cuisine)
+      )
+        return false;
+
       // Instant book filter
-      if (instantBookOnly && !dinner.instantBook) return false
-      
+      if (instantBookOnly && !dinner.instantBook) return false;
+
       // Superhost filter
-      if (superhostOnly && !dinner.host.superhost) return false
-      
+      if (superhostOnly && !dinner.host.superhost) return false;
+
       // Location filter (basic string matching)
       if (searchParams.location) {
-        const location = searchParams.location.toLowerCase()
-        const dinnerLocation = `${dinner.location.city} ${dinner.location.state} ${dinner.location.neighborhood}`.toLowerCase()
-        if (!dinnerLocation.includes(location)) return false
+        const location = searchParams.location.toLowerCase();
+        const dinnerLocation =
+          `${dinner.location.city} ${dinner.location.state} ${dinner.location.neighborhood}`.toLowerCase();
+        if (!dinnerLocation.includes(location)) return false;
       }
-      
+
       // Guest capacity filter
-      if (searchParams.guests && dinner.capacity < searchParams.guests) return false
-      
-      return true
-    })
+      if (searchParams.guests && dinner.capacity < searchParams.guests)
+        return false;
+
+      return true;
+    });
 
     // Sort results
     switch (sortBy) {
-      case 'price-low':
-        filtered.sort((a, b) => a.price - b.price)
-        break
-      case 'price-high':
-        filtered.sort((a, b) => b.price - a.price)
-        break
-      case 'rating':
-        filtered.sort((a, b) => b.rating - a.rating)
-        break
-      case 'date':
-        filtered.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-        break
+      case "price-low":
+        filtered.sort((a, b) => a.price - b.price);
+        break;
+      case "price-high":
+        filtered.sort((a, b) => b.price - a.price);
+        break;
+      case "rating":
+        filtered.sort((a, b) => b.rating - a.rating);
+        break;
+      case "date":
+        filtered.sort(
+          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+        );
+        break;
       default:
         // Keep recommended order (by rating then reviews)
         filtered.sort((a, b) => {
-          if (b.rating !== a.rating) return b.rating - a.rating
-          return b.reviewCount - a.reviewCount
-        })
+          if (b.rating !== a.rating) return b.rating - a.rating;
+          return b.reviewCount - a.reviewCount;
+        });
     }
 
-    return filtered
-  }, [dinners, priceRange, selectedCuisines, instantBookOnly, superhostOnly, searchParams, sortBy])
+    return filtered;
+  }, [
+    dinners,
+    priceRange,
+    selectedCuisines,
+    instantBookOnly,
+    superhostOnly,
+    searchParams,
+    sortBy,
+  ]);
 
   const toggleCuisine = (cuisine: string) => {
-    setSelectedCuisines(prev => 
-      prev.includes(cuisine) 
-        ? prev.filter(c => c !== cuisine)
+    setSelectedCuisines((prev) =>
+      prev.includes(cuisine)
+        ? prev.filter((c) => c !== cuisine)
         : [...prev, cuisine]
-    )
-  }
+    );
+  };
 
   const clearFilters = () => {
-    setPriceRange([0, 200])
-    setSelectedCuisines([])
-    setInstantBookOnly(false)
-    setSuperhostOnly(false)
-  }
+    setPriceRange([0, 200]);
+    setSelectedCuisines([]);
+    setInstantBookOnly(false);
+    setSuperhostOnly(false);
+  };
 
   const FiltersContent = () => (
     <div className="space-y-6">
@@ -133,6 +162,13 @@ export function SearchResults({ searchParams }: SearchResultsProps) {
           <Slider
             value={priceRange}
             onValueChange={setPriceRange}
+            onValueCommit={(value) => {
+              // Update URL when user releases the slider
+              const params = new URLSearchParams(window.location.search);
+              params.set("minPrice", value[0].toString());
+              params.set("maxPrice", value[1].toString());
+              router.push(`?${params.toString()}`);
+            }}
             max={200}
             min={0}
             step={10}
@@ -192,15 +228,11 @@ export function SearchResults({ searchParams }: SearchResultsProps) {
         </div>
       </div> */}
 
-      <Button 
-        variant="outline" 
-        onClick={clearFilters}
-        className="w-full"
-      >
+      <Button variant="outline" onClick={clearFilters} className="w-full">
         Clear all filters
       </Button>
     </div>
-  )
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -209,22 +241,22 @@ export function SearchResults({ searchParams }: SearchResultsProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {/* Mobile: Hero variant, Desktop: Compact variant */}
           <div className="block md:hidden">
-            <SearchWidget 
-              variant="hero" 
+            <SearchWidget
+              variant="hero"
               initialParams={{
                 location: searchParams.location,
                 date: searchParams.date,
-                guests: searchParams.guests
+                guests: searchParams.guests,
               }}
             />
           </div>
           <div className="hidden md:block">
-            <SearchWidget 
-              variant="compact" 
+            <SearchWidget
+              variant="compact"
               initialParams={{
                 location: searchParams.location,
                 date: searchParams.date,
-                guests: searchParams.guests
+                guests: searchParams.guests,
               }}
             />
           </div>
@@ -254,15 +286,18 @@ export function SearchResults({ searchParams }: SearchResultsProps) {
                 <h1 className="text-2xl font-semibold">
                   {filteredDinners.length} dinner experiences
                   {searchParams.location && (
-                    <span className="text-muted-foreground"> in {searchParams.location}</span>
+                    <span className="text-muted-foreground">
+                      {" "}
+                      in {searchParams.location}
+                    </span>
                   )}
                 </h1>
                 {searchParams.date && (
                   <p className="text-muted-foreground mt-1">
-                    {searchParams.date.toLocaleDateString('en-US', { 
-                      weekday: 'long', 
-                      month: 'long', 
-                      day: 'numeric' 
+                    {searchParams.date.toLocaleDateString("en-US", {
+                      weekday: "long",
+                      month: "long",
+                      day: "numeric",
                     })}
                     {searchParams.guests && ` • ${searchParams.guests} guests`}
                   </p>
@@ -294,8 +329,12 @@ export function SearchResults({ searchParams }: SearchResultsProps) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="recommended">Recommended</SelectItem>
-                    <SelectItem value="price-low">Price: Low to High</SelectItem>
-                    <SelectItem value="price-high">Price: High to Low</SelectItem>
+                    <SelectItem value="price-low">
+                      Price: Low to High
+                    </SelectItem>
+                    <SelectItem value="price-high">
+                      Price: High to Low
+                    </SelectItem>
                     <SelectItem value="rating">Highest Rated</SelectItem>
                     <SelectItem value="date">Soonest Date</SelectItem>
                   </SelectContent>
@@ -304,17 +343,17 @@ export function SearchResults({ searchParams }: SearchResultsProps) {
                 {/* View Toggle */}
                 <div className="hidden sm:flex border border-border rounded-lg">
                   <Button
-                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                    variant={viewMode === "grid" ? "default" : "ghost"}
                     size="sm"
-                    onClick={() => setViewMode('grid')}
+                    onClick={() => setViewMode("grid")}
                     className="rounded-r-none border-r"
                   >
                     <Grid3X3 className="w-4 h-4" />
                   </Button>
                   <Button
-                    variant={viewMode === 'list' ? 'default' : 'ghost'}
+                    variant={viewMode === "list" ? "default" : "ghost"}
                     size="sm"
-                    onClick={() => setViewMode('list')}
+                    onClick={() => setViewMode("list")}
                     className="rounded-l-none"
                   >
                     <List className="w-4 h-4" />
@@ -324,12 +363,16 @@ export function SearchResults({ searchParams }: SearchResultsProps) {
             </div>
 
             {/* Active Filters */}
-            {(selectedCuisines.length > 0 || instantBookOnly || superhostOnly || priceRange[0] > 0 || priceRange[1] < 200) && (
+            {(selectedCuisines.length > 0 ||
+              instantBookOnly ||
+              superhostOnly ||
+              priceRange[0] > 0 ||
+              priceRange[1] < 200) && (
               <div className="flex flex-wrap gap-2 mb-6">
-                {selectedCuisines.map(cuisine => (
-                  <Badge 
+                {selectedCuisines.map((cuisine) => (
+                  <Badge
                     key={cuisine}
-                    variant="secondary" 
+                    variant="secondary"
                     className="cursor-pointer hover:bg-secondary/80"
                     onClick={() => toggleCuisine(cuisine)}
                   >
@@ -337,7 +380,7 @@ export function SearchResults({ searchParams }: SearchResultsProps) {
                   </Badge>
                 ))}
                 {instantBookOnly && (
-                  <Badge 
+                  <Badge
                     variant="secondary"
                     className="cursor-pointer hover:bg-secondary/80"
                     onClick={() => setInstantBookOnly(false)}
@@ -346,7 +389,7 @@ export function SearchResults({ searchParams }: SearchResultsProps) {
                   </Badge>
                 )}
                 {superhostOnly && (
-                  <Badge 
+                  <Badge
                     variant="secondary"
                     className="cursor-pointer hover:bg-secondary/80"
                     onClick={() => setSuperhostOnly(false)}
@@ -355,7 +398,7 @@ export function SearchResults({ searchParams }: SearchResultsProps) {
                   </Badge>
                 )}
                 {(priceRange[0] > 0 || priceRange[1] < 200) && (
-                  <Badge 
+                  <Badge
                     variant="secondary"
                     className="cursor-pointer hover:bg-secondary/80"
                     onClick={() => setPriceRange([0, 200])}
@@ -381,23 +424,27 @@ export function SearchResults({ searchParams }: SearchResultsProps) {
                 </Button>
               </div>
             ) : (
-                <div className={`grid gap-6 ${
-                  viewMode === 'grid' 
-                    ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' 
-                    : 'grid-cols-1'
-                }`}>
-                  {filteredDinners.map((dinner) => (
-                    <DinnerCard 
-                      key={dinner.id}
-                      dinner={dinner}
-                      className={viewMode === 'list' ? 'md:flex md:space-x-4' : ''}
-                    />
-                  ))}
-                </div>
+              <div
+                className={`grid gap-6 ${
+                  viewMode === "grid"
+                    ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
+                    : "grid-cols-1"
+                }`}
+              >
+                {filteredDinners.map((dinner) => (
+                  <DinnerCard
+                    key={dinner.id}
+                    dinner={dinner}
+                    className={
+                      viewMode === "list" ? "md:flex md:space-x-4" : ""
+                    }
+                  />
+                ))}
+              </div>
             )}
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

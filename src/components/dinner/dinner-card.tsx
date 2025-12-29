@@ -1,54 +1,56 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import Image from 'next/image'
-import { useRouter } from 'next/navigation'
-import { Button } from '../ui/button'
-import { Badge } from '../ui/badge'
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
-import { Heart, Star, Zap, Calendar, MapPin, Users, Clock } from 'lucide-react'
-import { Dinner } from '@/types'
+import { useState } from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { Button } from "../ui/button";
+import { Badge } from "../ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { Heart, Star, Zap, Calendar, MapPin, Users, Clock } from "lucide-react";
+import { Dinner } from "@/types";
 
 interface DinnerCardProps {
-  dinner: Dinner
-  className?: string
+  dinner: Dinner;
+  className?: string;
 }
 
-export function DinnerCard({ dinner, className = '' }: DinnerCardProps) {
-  const router = useRouter()
-  const [isFavorited, setIsFavorited] = useState(false)
-  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+export function DinnerCard({ dinner, className = "" }: DinnerCardProps) {
+  const router = useRouter();
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const handleFavoriteToggle = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsFavorited(!isFavorited)
-  }
+    e.preventDefault();
+    e.stopPropagation();
+    setIsFavorited(!isFavorited);
+  };
 
   const nextImage = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setCurrentImageIndex((prev) => (prev + 1) % dinner.images.length)
-  }
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentImageIndex((prev) => (prev + 1) % dinner.images.length);
+  };
 
   const prevImage = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setCurrentImageIndex((prev) => (prev - 1 + dinner.images.length) % dinner.images.length)
-  }
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentImageIndex(
+      (prev) => (prev - 1 + dinner.images.length) % dinner.images.length
+    );
+  };
 
   const handleCardClick = () => {
-    router.push(`/dinners/${dinner.id}`)
-  }
+    router.push(`/dinners/${dinner.id}`);
+  };
 
   const handleQuickBook = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    router.push(`/booking?dinner=${dinner.id}`)
-  }
+    e.preventDefault();
+    e.stopPropagation();
+    router.push(`/booking?dinner=${dinner.id}`);
+  };
 
   return (
-    <div 
+    <div
       className={`group cursor-pointer transform transition-transform duration-200 hover:scale-[1.02] ${className}`}
       onClick={handleCardClick}
     >
@@ -56,15 +58,21 @@ export function DinnerCard({ dinner, className = '' }: DinnerCardProps) {
         {/* Image Container */}
         <div className="relative aspect-[4/3] overflow-hidden">
           <Image
-            src={`https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800&h=600&fit=crop&crop=center`}
+            src={
+              dinner.images && dinner.images.length > 0
+                ? dinner.images[currentImageIndex]
+                : dinner.image
+                ? dinner.image
+                : `https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800&h=600&fit=crop&crop=center`
+            }
             alt={dinner.title}
             fill
             sizes="(max-width: 768px) 100vw, 33vw"
             className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
-          
+
           {/* Image Navigation */}
-          {dinner.images.length > 1 && (
+          {dinner.images && dinner.images.length > 1 && (
             <>
               <Button
                 variant="ghost"
@@ -86,13 +94,13 @@ export function DinnerCard({ dinner, className = '' }: DinnerCardProps) {
           )}
 
           {/* Image Indicators */}
-          {dinner.images.length > 1 && (
+          {dinner.images && dinner.images.length > 1 && (
             <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex space-x-1">
               {dinner.images.map((_, index) => (
                 <div
                   key={index}
                   className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                    index === currentImageIndex ? 'bg-white' : 'bg-white/50'
+                    index === currentImageIndex ? "bg-white" : "bg-white/50"
                   }`}
                 />
               ))}
@@ -106,10 +114,12 @@ export function DinnerCard({ dinner, className = '' }: DinnerCardProps) {
             className="absolute top-3 right-3 w-8 h-8 p-0 rounded-full bg-white/80 hover:bg-white transition-colors"
             onClick={handleFavoriteToggle}
           >
-            <Heart 
+            <Heart
               className={`w-4 h-4 transition-colors ${
-                isFavorited ? 'fill-red-500 text-red-500' : 'text-gray-600 hover:text-gray-800'
-              }`} 
+                isFavorited
+                  ? "fill-red-500 text-red-500"
+                  : "text-gray-600 hover:text-gray-800"
+              }`}
             />
           </Button>
 
@@ -131,7 +141,7 @@ export function DinnerCard({ dinner, className = '' }: DinnerCardProps) {
           )}
 
           {/* Superhost Badge */}
-          {dinner.host.superhost && (
+          {dinner.host?.superhost && (
             <div className="absolute top-12 left-3">
               <Badge className="bg-primary text-white hover:bg-primary border-0">
                 Superhost
@@ -145,10 +155,15 @@ export function DinnerCard({ dinner, className = '' }: DinnerCardProps) {
           {/* Host Info */}
           <div className="flex items-center space-x-2">
             <Avatar className="w-6 h-6">
-              <AvatarImage src={`https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face`} alt={dinner.host.name} />
-              <AvatarFallback>{dinner.host.name[0]}</AvatarFallback>
+              <AvatarImage
+                src={`https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face`}
+                alt={dinner.host?.name || "Host"}
+              />
+              <AvatarFallback>{dinner.host?.name?.[0] || "H"}</AvatarFallback>
             </Avatar>
-            <span className="text-sm text-muted-foreground">Hosted by {dinner.host.name}</span>
+            <span className="text-sm text-muted-foreground">
+              Hosted by {dinner.host?.name || "Host"}
+            </span>
           </div>
 
           {/* Title */}
@@ -161,18 +176,29 @@ export function DinnerCard({ dinner, className = '' }: DinnerCardProps) {
             <div className="flex items-center space-x-4 text-sm text-muted-foreground">
               <div className="flex items-center space-x-1">
                 <Calendar className="w-4 h-4" />
-                <span>{new Date(dinner.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                <span>
+                  {new Date(dinner.date).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </span>
               </div>
               <div className="flex items-center space-x-1">
                 <Clock className="w-4 h-4" />
                 <span>{dinner.time}</span>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-4 text-sm text-muted-foreground">
               <div className="flex items-center space-x-1">
                 <MapPin className="w-4 h-4" />
-                <span>{dinner.location.neighborhood}, {dinner.location.city}</span>
+                <span>
+                  {typeof dinner.location === "object"
+                    ? dinner.location.neighborhood ||
+                      dinner.location.city ||
+                      "Location"
+                    : dinner.location || "Location"}
+                </span>
               </div>
               <div className="flex items-center space-x-1">
                 <Users className="w-4 h-4" />
@@ -186,7 +212,9 @@ export function DinnerCard({ dinner, className = '' }: DinnerCardProps) {
             <div className="flex items-center space-x-1">
               <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
               <span className="font-medium text-sm">{dinner.rating}</span>
-              <span className="text-sm text-muted-foreground">({dinner.reviewCount} reviews)</span>
+              <span className="text-sm text-muted-foreground">
+                ({dinner.reviewCount} reviews)
+              </span>
             </div>
             <Badge variant="secondary" className="text-xs">
               {dinner.cuisine}
@@ -195,7 +223,7 @@ export function DinnerCard({ dinner, className = '' }: DinnerCardProps) {
 
           {/* Quick Book Button */}
           <div className="pt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <Button 
+            <Button
               className="w-full bg-primary-600 hover:bg-primary-700 text-white rounded-lg"
               onClick={handleQuickBook}
             >
@@ -205,5 +233,5 @@ export function DinnerCard({ dinner, className = '' }: DinnerCardProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }

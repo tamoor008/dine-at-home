@@ -1,19 +1,26 @@
-import { Session } from "next-auth"
+export interface SessionLike {
+  user?: {
+    role?: string | null;
+    [key: string]: any;
+  } | null;
+}
 
-export function getRedirectUrl(session: Session | null): string {
+export function getRedirectUrl(session: SessionLike | null): string {
   if (!session?.user) {
-    return '/'
+    return "/";
   }
 
   // Redirect hosts to their dashboard
-  if (session.user.role === 'host') {
-    return '/host/dashboard'
+  if (session.user.role === "host") {
+    return "/host/dashboard";
   }
 
   // Redirect guests to home page
-  return '/'
+  return "/";
 }
 
-export function shouldRedirectToDashboard(session: Session | null): boolean {
-  return session?.user?.role === 'host'
+export function shouldRedirectToDashboard(
+  session: SessionLike | null
+): boolean {
+  return session?.user?.role === "host";
 }

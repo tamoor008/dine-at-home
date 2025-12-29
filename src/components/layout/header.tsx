@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { signOut, useSession } from "next-auth/react";
+import { useAuth } from "@/contexts/auth-context";
 import { Button } from "../ui/button";
-import { Input } from "../ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import {
   DropdownMenu,
@@ -14,9 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import {
-  Search,
   Menu,
-  Globe,
   User,
   Calendar,
   Heart,
@@ -33,7 +30,7 @@ interface HeaderProps {
 
 export function Header({ onSearch }: HeaderProps = {}) {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { user, isAuthenticated, signOut } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -78,12 +75,12 @@ export function Header({ onSearch }: HeaderProps = {}) {
                   <Menu className="w-4 h-4" />
                   <Avatar className="w-8 h-8">
                     <AvatarImage
-                      src={session?.user?.image || ""}
-                      alt={session?.user?.name || "User avatar"}
+                      src={user?.image || ""}
+                      alt={user?.name || "User avatar"}
                     />
                     <AvatarFallback>
-                      {session?.user?.name ? (
-                        session.user.name.charAt(0).toUpperCase()
+                      {user?.name ? (
+                        user.name.charAt(0).toUpperCase()
                       ) : (
                         <User className="w-4 h-4" />
                       )}
@@ -92,58 +89,86 @@ export function Header({ onSearch }: HeaderProps = {}) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 mt-2">
-                {session ? (
+                {isAuthenticated && user ? (
                   <>
                     <DropdownMenuItem className="font-semibold">
-                      {session.user?.name || session.user?.email}
+                      {user.name || user.email}
                     </DropdownMenuItem>
-                    {session.user?.role === "host" ? (
+                    {user.role === "host" ? (
                       <>
-                        <DropdownMenuItem onClick={() => router.push("/host/dashboard")}>
+                        <DropdownMenuItem
+                          onClick={() => router.push("/host/dashboard")}
+                        >
                           <ChefHat className="w-4 h-4 mr-2" />
                           Host Dashboard
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => router.push("/host/dashboard?tab=dinners")}>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            router.push("/host/dashboard?tab=dinners")
+                          }
+                        >
                           <Calendar className="w-4 h-4 mr-2" />
                           My Dinners
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => router.push("/host/dashboard?tab=bookings")}>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            router.push("/host/dashboard?tab=bookings")
+                          }
+                        >
                           <Calendar className="w-4 h-4 mr-2" />
                           Bookings
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => router.push("/host/dashboard?tab=reviews")}>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            router.push("/host/dashboard?tab=reviews")
+                          }
+                        >
                           <Heart className="w-4 h-4 mr-2" />
                           Reviews
                         </DropdownMenuItem>
                       </>
                     ) : (
                       <>
-                        <DropdownMenuItem onClick={() => router.push("/profile")}>
+                        <DropdownMenuItem
+                          onClick={() => router.push("/profile")}
+                        >
                           <User className="w-4 h-4 mr-2" />
                           My Profile
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => router.push("/profile?tab=bookings")}>
+                        <DropdownMenuItem
+                          onClick={() => router.push("/profile?tab=bookings")}
+                        >
                           <Calendar className="w-4 h-4 mr-2" />
                           My bookings
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => router.push("/profile?tab=reviews")}>
+                        <DropdownMenuItem
+                          onClick={() => router.push("/profile?tab=reviews")}
+                        >
                           <Heart className="w-4 h-4 mr-2" />
                           My reviews
                         </DropdownMenuItem>
                       </>
                     )}
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => router.push("/help-center")}>
+                    <DropdownMenuItem
+                      onClick={() => router.push("/help-center")}
+                    >
                       <HelpCircle className="w-4 h-4 mr-2" />
                       Help Center
                     </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => router.push(session.user?.role === "host" ? "/host/dashboard?tab=settings" : "/profile?tab=settings")}>
-          <Settings className="w-4 h-4 mr-2" />
-          Settings
-        </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() => signOut({ callbackUrl: "/" })}
+                      onClick={() =>
+                        router.push(
+                          user.role === "host"
+                            ? "/host/dashboard?tab=settings"
+                            : "/profile?tab=settings"
+                        )
+                      }
                     >
+                      <Settings className="w-4 h-4 mr-2" />
+                      Settings
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => signOut()}>
                       <LogOut className="w-4 h-4 mr-2" />
                       Logout
                     </DropdownMenuItem>
@@ -162,7 +187,9 @@ export function Header({ onSearch }: HeaderProps = {}) {
                       Log in
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => router.push("/help-center")}>
+                    <DropdownMenuItem
+                      onClick={() => router.push("/help-center")}
+                    >
                       <HelpCircle className="w-4 h-4 mr-2" />
                       Help Center
                     </DropdownMenuItem>

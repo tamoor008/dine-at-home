@@ -1,60 +1,98 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { useSession, signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import { MainLayout } from '@/components/layout/main-layout'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Users, ChefHat, ArrowRight } from 'lucide-react'
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/auth-context";
+import { MainLayout } from "@/components/layout/main-layout";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Users, ChefHat, ArrowRight } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 
 export default function RoleSelectionPage() {
-  const { data: session, status } = useSession()
-  const router = useRouter()
-  const [loading, setLoading] = useState(false)
+  const { user, session, isAuthenticated, loading: authLoading } = useAuth();
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // If user is not authenticated, redirect to sign-in
-    if (status === 'unauthenticated') {
-      router.push('/auth/signin')
-    }
-    
-    // If user already has a role, redirect to appropriate page
-    if (session?.user?.role && session.user.role !== 'guest') {
-      router.push(session.user.role === 'host' ? '/host/dashboard' : '/')
-    }
-  }, [session, status, router])
+    console.log("🎭 RoleSelectionPage Mounted");
+    console.log("Current User:", user);
+    console.log("Is Authenticated:", isAuthenticated);
+    console.log("Auth Loading:", authLoading);
 
-  const handleRoleSelection = async (role: 'guest' | 'host') => {
-    setLoading(true)
-    
+    if (!authLoading && !isAuthenticated) {
+      console.log("redirecting to signin because not authenticated");
+      router.push("/auth/signin");
+    }
+
+    if (user?.role === "host") {
+      console.log("User is already host, redirecting to dashboard");
+      router.push("/host/dashboard");
+    }
+    // Removed auto-redirect for 'guest' to allow them to upgrade to 'host' on this page
+  }, [user, isAuthenticated, authLoading, router]);
+
+  const handleRoleSelection = async (role: "guest" | "host") => {
+    setLoading(true);
+
     try {
-      const response = await fetch('/api/auth/update-role', {
-        method: 'POST',
+      if (!session?.access_token) {
+        throw new Error("No access token available");
+      }
+
+      // 1. Explicitly update Supabase User Metadata (Client-side)
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: { role },
+      });
+
+      if (updateError) {
+        throw new Error(
+          `Failed to update profile metadata: ${updateError.message}`
+        );
+      }
+
+      // 2. Sync with backend
+      const response = await fetch("/api/auth/update-role", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({ role }),
-      })
+      });
 
       if (response.ok) {
-        // Force a complete page refresh to get updated session
-        if (role === 'host') {
-          window.location.href = '/host/dashboard'
-        } else {
-          window.location.href = '/'
-        }
+        toast.success(`Role updated to ${role}`);
       } else {
-        console.error('Failed to update role')
-        setLoading(false)
+        console.error("Failed to update role API");
+        toast.error("Failed to sync role with backend");
       }
-    } catch (error) {
-      console.error('Error updating role:', error)
-      setLoading(false)
-    }
-  }
 
-  if (status === 'loading') {
+      // 3. Refresh session LAST to capture any backend changes
+      const { error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError) {
+        console.warn(
+          "Session refresh failed during role selection",
+          refreshError
+        );
+      }
+
+      window.location.href = role === "host" ? "/host/dashboard" : "/";
+    } catch (error) {
+      console.error("Error updating role:", error);
+      toast.error("An error occurred while updating role");
+      setLoading(false);
+    }
+  };
+
+  if (authLoading) {
     return (
       <MainLayout>
         <div className="min-h-screen flex items-center justify-center">
@@ -64,12 +102,10 @@ export default function RoleSelectionPage() {
           </div>
         </div>
       </MainLayout>
-    )
+    );
   }
 
-  if (!session) {
-    return null
-  }
+  if (!isAuthenticated) return null;
 
   return (
     <MainLayout>
@@ -103,10 +139,10 @@ export default function RoleSelectionPage() {
                   <li>• Leave reviews and ratings</li>
                   <li>• Save favorite experiences</li>
                 </ul>
-                <Button 
-                  className="w-full" 
+                <Button
+                  className="w-full"
                   variant="outline"
-                  onClick={() => handleRoleSelection('guest')}
+                  onClick={() => handleRoleSelection("guest")}
                   disabled={loading}
                 >
                   Continue as Guest
@@ -133,9 +169,9 @@ export default function RoleSelectionPage() {
                   <li>• Earn money from bookings</li>
                   <li>• Build your culinary reputation</li>
                 </ul>
-                <Button 
-                  className="w-full bg-primary-600 hover:bg-primary-700" 
-                  onClick={() => handleRoleSelection('host')}
+                <Button
+                  className="w-full bg-primary-600 hover:bg-primary-700"
+                  onClick={() => handleRoleSelection("host")}
                   disabled={loading}
                 >
                   Continue as Host
@@ -147,11 +183,12 @@ export default function RoleSelectionPage() {
 
           <div className="text-center mt-8">
             <p className="text-sm text-muted-foreground">
-              Don't worry, you can always change your role later in your account settings.
+              Don't worry, you can always change your role later in your account
+              settings.
             </p>
           </div>
         </div>
       </div>
     </MainLayout>
-  )
+  );
 }

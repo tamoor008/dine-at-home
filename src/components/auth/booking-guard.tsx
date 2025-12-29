@@ -1,44 +1,48 @@
-'use client'
+"use client";
 
-import { useEffect } from 'react'
-import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import { canBookDinners, getAccessDeniedMessage, getRoleBasedRedirect } from '../../lib/access-control'
-import { Alert, AlertDescription } from '../ui/alert'
-import { AlertCircle, ArrowLeft } from 'lucide-react'
-import { Button } from '../ui/button'
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/auth-context";
+import {
+  canBookDinners,
+  getAccessDeniedMessage,
+  getRoleBasedRedirect,
+} from "../../lib/access-control";
+import { Alert, AlertDescription } from "../ui/alert";
+import { AlertCircle, ArrowLeft } from "lucide-react";
+import { Button } from "../ui/button";
 
 interface BookingGuardProps {
-  children: React.ReactNode
-  fallback?: React.ReactNode
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
 }
 
 export function BookingGuard({ children, fallback }: BookingGuardProps) {
-  const { data: session, status } = useSession()
-  const router = useRouter()
+  const { session, user, loading, isAuthenticated } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
-    if (status === 'loading') {
-      // Still loading session
-      return
+    if (loading) return;
+
+    if (!isAuthenticated) {
+      router.push("/auth/signin");
+      return;
     }
 
-    if (status === 'unauthenticated') {
-      // Not authenticated, redirect to sign-in
-      router.push('/auth/signin')
-      return
-    }
+    // Need to type cast session/user to match what access-control expects
+    // access-control likely expects NextAuth Session.
+    // We should probably update access-control.ts too, but for now we can adapt.
+    const mockSession = session
+      ? { user: { ...user, role: user?.role } }
+      : null;
 
-    if (status === 'authenticated' && session && !canBookDinners(session)) {
-      // User is authenticated but cannot book (host account)
-      // Redirect to appropriate page
-      const redirectUrl = getRoleBasedRedirect(session)
-      router.push(redirectUrl)
+    if (mockSession && !canBookDinners(mockSession as any)) {
+      const redirectUrl = getRoleBasedRedirect(mockSession as any);
+      router.push(redirectUrl);
     }
-  }, [session, status, router])
+  }, [isAuthenticated, loading, session, user, router]);
 
-  // Show loading while checking session
-  if (status === 'loading') {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -46,13 +50,14 @@ export function BookingGuard({ children, fallback }: BookingGuardProps) {
           <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
-    )
+    );
   }
 
-  // Show fallback if user cannot book
-  if (session && !canBookDinners(session)) {
+  const mockSession = session ? { user: { ...user, role: user?.role } } : null;
+
+  if (mockSession && !canBookDinners(mockSession as any)) {
     if (fallback) {
-      return <>{fallback}</>
+      return <>{fallback}</>;
     }
 
     return (
@@ -61,12 +66,14 @@ export function BookingGuard({ children, fallback }: BookingGuardProps) {
           <Alert className="border-orange-200 bg-orange-50">
             <AlertCircle className="h-4 w-4 text-orange-600" />
             <AlertDescription className="text-orange-800">
-              {getAccessDeniedMessage(session)}
+              {getAccessDeniedMessage(mockSession as any)}
             </AlertDescription>
           </Alert>
           <div className="mt-6 text-center">
-            <Button 
-              onClick={() => router.push(getRoleBasedRedirect(session))}
+            <Button
+              onClick={() =>
+                router.push(getRoleBasedRedirect(mockSession as any))
+              }
               variant="outline"
               className="mr-4"
             >
@@ -76,16 +83,14 @@ export function BookingGuard({ children, fallback }: BookingGuardProps) {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
-  // Show children if user is authenticated and can book
-  if (status === 'authenticated' && session && canBookDinners(session)) {
-    return <>{children}</>
+  if (isAuthenticated && mockSession && canBookDinners(mockSession as any)) {
+    return <>{children}</>;
   }
 
-  // If not authenticated, show loading (will redirect in useEffect)
-  if (status === 'unauthenticated') {
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -93,10 +98,9 @@ export function BookingGuard({ children, fallback }: BookingGuardProps) {
           <p className="text-muted-foreground">Redirecting to sign in...</p>
         </div>
       </div>
-    )
+    );
   }
 
-  // Fallback for any other case
   return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-center">
@@ -104,5 +108,5 @@ export function BookingGuard({ children, fallback }: BookingGuardProps) {
         <p className="text-muted-foreground">Loading...</p>
       </div>
     </div>
-  )
+  );
 }

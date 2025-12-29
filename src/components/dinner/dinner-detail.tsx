@@ -41,10 +41,10 @@ import { Dinner, NavigationParams } from "@/types";
 
 interface DinnerDetailProps {
   dinner: Dinner;
-  onNavigate: (page: string, params?: NavigationParams) => void;
+  onBook: (seats: number) => Promise<void>;
 }
 
-export function DinnerDetail({ dinner, onNavigate }: DinnerDetailProps) {
+export function DinnerDetail({ dinner, onBook }: DinnerDetailProps) {
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedGuests, setSelectedGuests] = useState(2);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -87,12 +87,8 @@ export function DinnerDetail({ dinner, onNavigate }: DinnerDetailProps) {
     { icon: Shield, label: "COVID safety measures" },
   ];
 
-  const handleBooking = () => {
-    onNavigate("booking", {
-      dinner,
-      date: selectedDate,
-      guests: selectedGuests,
-    });
+  const handleBooking = async () => {
+    await onBook(selectedGuests);
   };
 
   const openCarousel = (index: number) => {
@@ -109,24 +105,26 @@ export function DinnerDetail({ dinner, onNavigate }: DinnerDetailProps) {
   };
 
   const prevImage = () => {
-    setCarouselIndex((prev) => (prev - 1 + dinner.images.length) % dinner.images.length);
+    setCarouselIndex(
+      (prev) => (prev - 1 + dinner.images.length) % dinner.images.length
+    );
   };
 
   // Keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!isCarouselOpen) return;
-    
-    if (e.key === 'ArrowLeft') {
+
+    if (e.key === "ArrowLeft") {
       prevImage();
-    } else if (e.key === 'ArrowRight') {
+    } else if (e.key === "ArrowRight") {
       nextImage();
-    } else if (e.key === 'Escape') {
+    } else if (e.key === "Escape") {
       closeCarousel();
     }
   };
 
-      return (
-    <div 
+  return (
+    <div
       className="min-h-screen bg-background pt-10"
       onKeyDown={handleKeyDown}
       tabIndex={0}
@@ -183,7 +181,10 @@ export function DinnerDetail({ dinner, onNavigate }: DinnerDetailProps) {
             <div className="grid grid-cols-4 gap-2 rounded-xl overflow-hidden">
               <div className="col-span-4 sm:col-span-2 sm:row-span-2 relative">
                 <Image
-                  src={dinner.images[0] || "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=1200&h=800&fit=crop&crop=center"}
+                  src={
+                    dinner.images[0] ||
+                    "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=1200&h=800&fit=crop&crop=center"
+                  }
                   alt={dinner.title}
                   fill
                   sizes="(max-width: 640px) 100vw, 50vw"
@@ -194,7 +195,10 @@ export function DinnerDetail({ dinner, onNavigate }: DinnerDetailProps) {
               {dinner.images.slice(1, 5).map((image, index) => (
                 <div className="relative h-32" key={index}>
                   <Image
-                    src={image || "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=600&h=400&fit=crop&crop=center"}
+                    src={
+                      image ||
+                      "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=600&h=400&fit=crop&crop=center"
+                    }
                     alt={`${dinner.title} ${index + 2}`}
                     fill
                     sizes="(max-width: 640px) 50vw, 25vw"
@@ -432,11 +436,7 @@ export function DinnerDetail({ dinner, onNavigate }: DinnerDetailProps) {
                     </Button>
                   )}
 
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => onNavigate("chat", { host: dinner.host })}
-                  >
+                  <Button variant="outline" className="w-full">
                     <MessageSquare className="w-4 h-4 mr-2" />
                     Message host
                   </Button>
@@ -471,7 +471,7 @@ export function DinnerDetail({ dinner, onNavigate }: DinnerDetailProps) {
 
       {/* Image Carousel Modal */}
       {isCarouselOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
           onClick={closeCarousel}
         >
@@ -499,7 +499,7 @@ export function DinnerDetail({ dinner, onNavigate }: DinnerDetailProps) {
           </Button>
 
           {/* Image */}
-          <div 
+          <div
             className="relative max-w-7xl w-full h-full flex items-center justify-center px-16"
             onClick={(e) => e.stopPropagation()}
           >

@@ -1,39 +1,45 @@
-'use client'
+"use client";
 
-import { useEffect } from 'react'
-import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import { canAccessHostDashboard, getAccessDeniedMessageForHostDashboard } from '@/lib/access-control'
-import { Alert, AlertDescription } from '../ui/alert'
-import { AlertCircle, ArrowLeft } from 'lucide-react'
-import { Button } from '../ui/button'
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import {
+  canAccessHostDashboard,
+  getAccessDeniedMessageForHostDashboard,
+} from "@/lib/access-control";
+import { Alert, AlertDescription } from "../ui/alert";
+import { AlertCircle, ArrowLeft } from "lucide-react";
+import { Button } from "../ui/button";
+import { useAuth } from "@/contexts/auth-context";
 
 interface HostGuardProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 export function HostGuard({ children }: HostGuardProps) {
-  const { data: session, status } = useSession()
-  const router = useRouter()
+  const { session, user, loading } = useAuth();
+  const router = useRouter();
 
-  const isAllowed = canAccessHostDashboard(session)
-  const accessDeniedMessage = getAccessDeniedMessageForHostDashboard(session)
+  const mockSession = session ? { user: { ...user, role: user?.role } } : null;
+
+  const isAllowed = canAccessHostDashboard(mockSession);
+  const accessDeniedMessage =
+    getAccessDeniedMessageForHostDashboard(mockSession);
 
   useEffect(() => {
-    if (status === 'loading') return // Do nothing while session is loading
+    if (loading) return; // Do nothing while session is loading
 
     if (!isAllowed) {
-      // Optionally, you could redirect immediately here, but showing a message first is more user-friendly
-      // router.replace('/');
+      // Optionally, you could redirect immediately here
+      // But showing a message first is more user-friendly
     }
-  }, [status, isAllowed, router])
+  }, [loading, isAllowed, router]);
 
-  if (status === 'loading') {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p>Loading...</p>
       </div>
-    )
+    );
   }
 
   if (!isAllowed) {
@@ -45,15 +51,15 @@ export function HostGuard({ children }: HostGuardProps) {
             {accessDeniedMessage}
           </AlertDescription>
           <div className="mt-6 text-center">
-            <Button onClick={() => router.push('/')} className="gap-2">
+            <Button onClick={() => router.push("/")} className="gap-2">
               <ArrowLeft className="w-4 h-4" />
               Go to Home
             </Button>
           </div>
         </Alert>
       </div>
-    )
+    );
   }
 
-  return <>{children}</>
+  return <>{children}</>;
 }
