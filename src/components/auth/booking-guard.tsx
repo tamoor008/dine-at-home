@@ -7,7 +7,7 @@ import { Alert, AlertDescription } from '../ui/alert'
 import { AlertCircle, ArrowLeft } from 'lucide-react'
 import { Button } from '../ui/button'
 import { useAuth } from '@/contexts/auth-context'
-
+//add types
 interface BookingGuardProps {
   children: React.ReactNode
   fallback?: React.ReactNode
